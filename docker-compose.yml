@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PrivateDiploma Frontend Application
+  privatediploma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: privatediploma-app
+    ports:
+      - "3003:80"
+    environment:
+      - NODE_ENV=production
+      - VITE_NETWORK_ID=testnet
+      - VITE_RPC_URL=https://rpc.testnet.midnight.network
+      - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+      - VITE_ENABLE_BLOCKCHAIN=${ENABLE_BLOCKCHAIN:-false}
+    volumes:
+      # Mount source for development (optional - comment out for production)
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+    restart: unless-stopped
+    networks:
+      - privatediploma-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development server (alternative to production build)
+  # Uncomment this section for hot-reload development
+  # privatediploma-dev:
+  #   image: node:18-alpine
+  #   container_name: privatediploma-dev
+  #   working_dir: /app
+  #   ports:
+  #     - "3003:3003"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - VITE_NETWORK_ID=testnet
+  #     - VITE_RPC_URL=https://rpc.testnet.midnight.network
+  #     - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+  #     - VITE_ENABLE_BLOCKCHAIN=${ENABLE_BLOCKCHAIN:-false}
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3003"
+  #   restart: unless-stopped
+  #   networks:
+  #     - privatediploma-network
+
+networks:
+  privatediploma-network:
+    driver: bridge
+
+# Optional: Add volumes for persistent data
+volumes:
+  node_modules:

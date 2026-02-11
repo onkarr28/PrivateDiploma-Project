@@ -2,6 +2,13 @@
  * PrivateDiploma SDK Integration
  * TypeScript/JavaScript boilerplate for interacting with PrivateDiploma smart contract
  * Built on Midnight Network using Midnight SDK and TypeScript
+ * 
+ * NOTE: This file is a REFERENCE IMPLEMENTATION for Midnight SDK integration.
+ * The actual application uses mock blockchain integration in utils/mockBlockchain.ts
+ * To use this file, install required Midnight SDK packages:
+ * - @midnight-ntwrk/midnight-js-sdk
+ * - @midnight-ntwrk/wallet
+ * - @midnight-ntwrk/compact-runtime
  */
 
 // NOTE: These Midnight SDK imports are for production use
@@ -178,7 +185,6 @@ class HashingUtility {
     return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
   }
 }
-}
 
 // ============================================================================
 // ZERO-KNOWLEDGE PROOF GENERATOR
@@ -227,10 +233,11 @@ class ZKProofGenerator {
 
     // Create proof commitment by hashing the student data
     const proofInput = JSON.stringify(studentPrivateData)
-    const proofCommitment = crypto
-      .createHash("sha256")
-      .update(proofInput)
-      .digest("hex")
+    // NOTE: In browser, use Web Crypto API instead of Node.js crypto.createHash
+    const encoder = new TextEncoder()
+    const data = encoder.encode(proofInput)
+    const hashBuffer = crypto.subtle ? null : null // Placeholder - use proper async hashing
+    const proofCommitment = HashingUtility.hashData(proofInput) // Use our utility instead
 
     return {
       certificateHash,
@@ -252,22 +259,23 @@ class ZKProofGenerator {
     proof: VerificationProof,
     studentData: {
       name: string
-      marks: Record<string, number>
+      marks: Record<string, string | number>
       metadata: Record<string, string>
     }
   ): boolean {
     const dataString = JSON.stringify(studentData)
-    const expectedCommitment = crypto
-      .createHash("sha256")
-      .update(dataString)
-      .digest("hex")
+    const expectedCommitment = HashingUtility.hashData(dataString)
 
     return proof.proofCommitment === expectedCommitment
   }
 }
 
+// Type placeholders for Midnight SDK (install packages to use actual types)
+type ContractAddress = string
+type Wallet = any
+
 // ============================================================================
-// MAIN SDK CLIENT CLASS
+// MAIN SDK CLIENT CLASS (Reference Implementation)
 // ============================================================================
 
 /**
@@ -279,6 +287,9 @@ class ZKProofGenerator {
  * - Verifying diplomas using ZKP (student & employer)
  * - Revoking diplomas (university only)
  * - Querying diploma status
+ * 
+ * NOTE: This is a REFERENCE IMPLEMENTATION requiring Midnight SDK packages.
+ * For working code, see utils/mockBlockchain.ts or utils/productionBlockchain.ts
  */
 class PrivateDiplomaClient {
   private contractAddress: ContractAddress
@@ -351,7 +362,7 @@ class PrivateDiplomaClient {
         currentTimestamp
       )
 
-      const studentDataCommitment = HashingUtility.createStudentDataCommitment(
+      const studentDataCommitment = await HashingUtility.createStudentDataCommitment(
         studentName,
         marks,
         {
@@ -360,12 +371,12 @@ class PrivateDiplomaClient {
         }
       )
 
-      const degreeTypeHash = HashingUtility.hashDegreeType(degreeType)
-      const departmentHash = HashingUtility.hashDepartmentName(department)
+      const degreeTypeHash = await HashingUtility.hashDegreeType(degreeType)
+      const departmentHash = await HashingUtility.hashDepartmentName(department)
 
       // Step 2: Prepare transaction payload
       const payload: IssuanceTxPayload = {
-        certificateHash,
+        certificateHash: await certificateHash,
         studentDataCommitment,
         degreeTypeHash,
         departmentHash,
@@ -373,7 +384,10 @@ class PrivateDiplomaClient {
         estimatedGas: 250000, // Typical gas for diploma issuance
       }
 
-      // Step 3: Build and sign transaction
+      // Step 3: Build and sign transaction (requires Midnight SDK)
+      // NOTE: Uncomment when Midnight SDK is installed
+      throw new Error("createTransaction requires @midnight-ntwrk/midnight-js-sdk package");
+      /* 
       const tx = createTransaction({
         contractAddress: this.contractAddress,
         functionName: "issueDiploma",
@@ -402,6 +416,8 @@ class PrivateDiplomaClient {
       console.log(`  Transaction: ${txHash}`)
 
       return txHash
+      */
+      return "SDK_NOT_INSTALLED_USE_MOCK_BLOCKCHAIN";
     } catch (error) {
       console.error("Error issuing diploma:", error)
       throw error
@@ -711,6 +727,9 @@ export {
   PrivateDiplomaClient,
   HashingUtility,
   ZKProofGenerator,
+}
+
+export type {
   DiplomaRecord,
   VerificationProof,
   VerificationResult,

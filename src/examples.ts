@@ -13,7 +13,8 @@ import {
   ZKProofGenerator,
   PrivateDiplomaConfig,
 } from "./index"
-import { Wallet } from "@midnight-ntwrk/wallet"
+// Note: @midnight-ntwrk/wallet package must be installed separately
+// import { Wallet } from "@midnight-ntwrk/wallet"
 
 // ============================================================================
 // EXAMPLE 1: University Issues a Diploma
@@ -23,9 +24,10 @@ async function exampleUniversityIssuesDiploma() {
   console.log("\n📚 EXAMPLE 1: University Issues a Diploma\n")
 
   // University's wallet (must be authorized in contract)
-  const universityWallet = new Wallet({
-    // Wallet initialization details
-  })
+  // const universityWallet = new Wallet({
+  //   // Wallet initialization details
+  // })
+  const universityWallet: any = null; // Placeholder
 
   // Configuration pointing to deployed contract
   const config: PrivateDiplomaConfig = {

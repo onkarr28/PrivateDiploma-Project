@@ -117,9 +117,6 @@ class TransactionManager {
         certificateHash: commitment,
       };
 
-      // Step 9: Start monitoring transaction status
-      this.monitorTransaction(txHash, result);
-
       return result;
     } catch (error) {
       console.error('❌ Diploma issuance transaction failed:', error);
@@ -183,8 +180,6 @@ class TransactionManager {
         status: 'pending',
         timestamp: Date.now(),
       };
-
-      this.monitorTransaction(txHash, result);
 
       return result;
     } catch (error) {
@@ -268,25 +263,32 @@ class TransactionManager {
    * TRANSACTION STATUS MONITORING
    * Monitor transaction and update listeners
    */
-  private async monitorTransaction(
+  public monitorTransaction(
     txHash: string,
-    result: TransactionResult
-  ): Promise<void> {
+    callback: (status: TransactionResult) => void
+  ): () => void {
     console.log(`👀 Monitoring transaction: ${txHash}`);
 
     let attempts = 0;
+    let active = true;
     const maxAttempts = 60; // 10 minutes with 10-second intervals
     const pollInterval = 10000; // 10 seconds
 
     const poll = async () => {
+      if (!active) return;
+      
       try {
         attempts++;
 
         if (attempts > maxAttempts) {
-          result.status = 'failed';
-          result.timestamp = Date.now();
-          this.notifyListeners(txHash, result);
+          const result: TransactionResult = {
+            txHash,
+            status: 'failed',
+            timestamp: Date.now(),
+          };
+          callback(result);
           console.error('❌ Transaction timeout after 10 minutes');
+          active = false;
           return;
         }
 
@@ -295,40 +297,53 @@ class TransactionManager {
 
         if (receipt) {
           if (receipt.status === 'confirmed') {
-            result.status = 'confirmed';
-            result.blockNumber = receipt.blockNumber;
-            result.gasUsed = receipt.gasUsed;
-            result.timestamp = Date.now();
+            const result: TransactionResult = {
+              txHash,
+              status: 'confirmed',
+              blockNumber: receipt.blockNumber,
+              gasUsed: receipt.gasUsed,
+              timestamp: Date.now(),
+            };
 
             console.log('✓ Transaction confirmed!', {
               block: receipt.blockNumber,
               gas: receipt.gasUsed,
             });
 
-            this.notifyListeners(txHash, result);
+            callback(result);
+            active = false;
           } else if (receipt.status === 'failed') {
-            result.status = 'failed';
-            result.timestamp = Date.now();
+            const result: TransactionResult = {
+              txHash,
+              status: 'failed',
+              timestamp: Date.now(),
+            };
 
             console.error('❌ Transaction failed on-chain');
-            this.notifyListeners(txHash, result);
+            callback(result);
+            active = false;
           } else {
             // Still pending, check again
             console.log(`⏳ Transaction pending... (attempt ${attempts}/${maxAttempts})`);
-            setTimeout(poll, pollInterval);
+            if (active) setTimeout(poll, pollInterval);
           }
         } else {
           // Receipt not available yet, continue polling
-          setTimeout(poll, pollInterval);
+          if (active) setTimeout(poll, pollInterval);
         }
       } catch (error) {
         console.error('Error polling transaction:', error);
-        setTimeout(poll, pollInterval);
+        if (active) setTimeout(poll, pollInterval);
       }
     };
 
     // Start polling
     setTimeout(poll, pollInterval);
+    
+    // Return unsubscribe function
+    return () => {
+      active = false;
+    };
   }
 
   /**
@@ -607,10 +622,9 @@ export async function submitDiplomaTransaction(witness: DiplomaWitness): Promise
 }
 
 export async function verifyDiplomaTransaction(
-  certificateHash: string,
-  witness: DiplomaWitness
+  zkProof: ZKProofData
 ): Promise<TransactionResult> {
-  return getTransactionManager().verifyDiplomaTransaction(certificateHash, witness);
+  return getTransactionManager().verifyDiplomaTransaction(zkProof);
 }
 
 export function monitorTransaction(
@@ -620,12 +634,12 @@ export function monitorTransaction(
   return getTransactionManager().monitorTransaction(txHash, callback);
 }
 
-export async function estimateGasForIssuance(witness: DiplomaWitness): Promise<GasEstimate> {
-  return getTransactionManager().estimateGasForIssuance(witness);
+export async function estimateGasForIssuance(commitment: string): Promise<GasEstimate> {
+  return getTransactionManager().estimateGasForIssuance(commitment);
 }
 
-export async function estimateGasForVerification(certificateHash: string): Promise<GasEstimate> {
-  return getTransactionManager().estimateGasForVerification(certificateHash);
+export async function estimateGasForVerification(zkProof: ZKProofData): Promise<GasEstimate> {
+  return getTransactionManager().estimateGasForVerification(zkProof);
 }
 
 export default TransactionManager;

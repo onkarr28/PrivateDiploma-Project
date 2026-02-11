@@ -3,8 +3,8 @@
  * Demonstrates how to use the on-chain transaction system
  */
 
-import { useMidnightSDK } from './utils/MidnightProvider';
-import { TransactionResult } from './utils/transactionManager';
+import { useMidnightSDK } from '../utils/MidnightProvider';
+import { TransactionResult } from '../utils/transactionManager';
 
 // ============================================================
 // EXAMPLE 1: Issue Diploma with On-Chain Transaction
@@ -47,7 +47,7 @@ export async function exampleIssueDiploma() {
   // ✗ Student ID
 
   // Step 3: Monitor transaction status
-  const unsubscribe = monitorTransaction(txResult.txHash, (status) => {
+  const unsubscribe = monitorTransaction(txResult.txHash, (status: TransactionResult) => {
     console.log("📡 Transaction update:", status);
     
     if (status.status === 'confirmed') {
@@ -91,11 +91,11 @@ export async function exampleVerifyDiploma() {
 
   console.log("✅ ZK Proof generated!");
   console.log("Proof:", zkProof.proof.slice(0, 50) + "...");
-  console.log("Commitment:", zkProof.commitment);
+  console.log("Nullifier:", zkProof.nullifier);
   
   // The proof contains:
   // ✓ proof: Cryptographic proof
-  // ✓ commitment: Public commitment hash
+  // ✓ nullifier: Unique identifier for this proof
   // ✓ publicInputs: Any public parameters
   // ✗ witness: NOT included (stays private!)
 
@@ -136,7 +136,7 @@ export async function exampleVerifyDiploma() {
 
 export async function exampleMonitorGasFees() {
   const { submitDiplomaTransaction } = useMidnightSDK();
-  const { estimateGasForIssuance } = await import('./utils/transactionManager');
+  const { estimateGasForIssuance } = await import('../utils/transactionManager');
 
   const witness = {
     studentId: "STU-2026-001",
@@ -234,7 +234,7 @@ export async function exampleHandleTransactionStates() {
 // ============================================================
 
 export async function exampleQueryLedger() {
-  const { getTransactionManager } = await import('./utils/transactionManager');
+  const { getTransactionManager } = await import('../utils/transactionManager');
   const txManager = getTransactionManager();
 
   // Query by commitment (public hash)

@@ -7,14 +7,11 @@ interface EmployerVerificationProps {
 }
 
 interface VerificationResult {
-  certificateHash: string
-  proofCommitment: string
-  nullifier: string
-  nonce: string
-  verified: boolean
+  isValid: boolean
+  diplomaHash: string
   message: string
-  timestamp: string
-  issuer: string
+  verifiedAt: number
+  employerVerified: string
 }
 
 export default function EmployerVerification({ userAddress }: EmployerVerificationProps) {
@@ -66,24 +63,18 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
       
       // Call SDK to verify the diploma
       const verificationResult = await verifyDiploma({
-        proof: proofData.proof,
-        commitment: proofData.commitment,
-        credentialId: proofData.credentialId,
-        employerAddress: userAddress,
+        certificateHash: proofData.certificateHash || '',
+        studentDataCommitment: proofData.commitment || '',
+        proofData: proofData.proof || '',
       })
 
       // Format the result
       const result: VerificationResult = {
-        certificateHash: verificationResult.certificateHash,
-        proofCommitment: verificationResult.commitment,
-        nullifier: verificationResult.nullifier || 'N/A',
-        nonce: verificationResult.nonce || 'N/A',
-        verified: verificationResult.isValid,
-        message: verificationResult.isValid 
-          ? 'Diploma successfully verified on Midnight Network'
-          : 'Diploma verification failed or has been revoked',
-        timestamp: new Date().toISOString(),
-        issuer: verificationResult.issuer || 'Educational Institution',
+        isValid: verificationResult.isValid,
+        diplomaHash: verificationResult.isValid ? (proofData.certificateHash || '') : '',
+        message: verificationResult.message,
+        verifiedAt: Date.now(),
+        employerVerified: userAddress,
       }
 
       setResult(result)
@@ -251,7 +242,7 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
 
               {step === 'result' && result && (
                 <>
-                  {result.verified ? (
+                  {result.isValid ? (
                     <div className="success-message mb-6 flex items-start gap-3">
                       <CheckCircle2 size={20} className="flex-shrink-0 mt-0.5" />
                       <div>
@@ -303,12 +294,12 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
                   <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white border-opacity-20">
                     <div>
                       <p className="text-gray-400 text-sm mb-1">Issued By:</p>
-                      <p className="text-white font-medium">{result.issuer}</p>
+                      <p className="text-white font-medium">{result.employerVerified}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm mb-1">Verified At:</p>
                       <p className="text-white font-medium">
-                        {new Date(result.timestamp).toLocaleString()}
+                        {new Date(result.verifiedAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -367,13 +358,7 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
                     <div>
                       <p className="text-gray-500 mb-1">Certificate Hash:</p>
                       <code className="bg-black bg-opacity-50 px-3 py-2 rounded text-xs text-cyan-400 block break-all">
-                        {result.certificateHash}
-                      </code>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">Proof Commitment:</p>
-                      <code className="bg-black bg-opacity-50 px-3 py-2 rounded text-xs text-purple-400 block break-all">
-                        {result.proofCommitment}
+                        {result.diplomaHash}
                       </code>
                     </div>
                   </div>
