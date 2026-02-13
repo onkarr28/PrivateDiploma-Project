@@ -30,11 +30,11 @@ function AppContent() {
     if (userInfo.isConnected && userInfo.address && !connected) {
       console.log('🔗 Wallet connected, initializing SDK...')
       initializeSDK({
-        rpcUrl: 'https://midnight-testnet.example.com',
-        contractAddress: '0xMockContract123',
-        networkId: 'midnight-testnet'
+        rpcUrl: 'http://localhost:9944',
+        contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS || 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p',
+        networkId: 'midnight-local'
       }, userInfo.address).catch(err => {
-        console.warn('SDK initialization failed (will use mock):', err)
+        console.warn('SDK initialization failed (will use Local Ledger Provider):', err)
       })
     }
   }, [userInfo.isConnected, userInfo.address, connected, initializeSDK])

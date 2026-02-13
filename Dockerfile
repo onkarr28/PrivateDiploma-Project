@@ -4,11 +4,17 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files and npm registry config
+COPY package*.json .npmrc ./
+
+# Remove lockfile to avoid conflicts
+RUN rm -f package-lock.json
 
 # Install dependencies
-RUN npm ci
+RUN npm install
+
+# Remove registry config after install
+RUN rm .npmrc
 
 # Copy source code
 COPY . .

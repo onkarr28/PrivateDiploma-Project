@@ -20,6 +20,15 @@ export function detectWallet(): WalletDetectionResult {
   console.log('window.cardano:', w.cardano);
   console.log('window.midnight:', w.midnight);
   console.log('window.lace:', w.lace);
+  if (w.midnight?.mnLace) {
+    console.log('✓ Midnight Lace provider detected via window.midnight.mnLace');
+    return {
+      detected: true,
+      walletType: 'Lace Midnight',
+      apiMethods: Object.keys(w.midnight.mnLace).filter(key => typeof w.midnight.mnLace[key] === 'function'),
+      error: null,
+    };
+  }
   
   // Priority 1: Check for Lace wallet (Cardano) - HIGHEST PRIORITY
   if (w.cardano?.lace) {

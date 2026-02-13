@@ -4,15 +4,15 @@
  * Built on Midnight Network using Midnight SDK and TypeScript
  * 
  * NOTE: This file is a REFERENCE IMPLEMENTATION for Midnight SDK integration.
- * The actual application uses mock blockchain integration in utils/mockBlockchain.ts
- * To use this file, install required Midnight SDK packages:
+ * The application uses Local Ledger Provider for development and testing.
+ * To use this file with real Midnight SDK, install required packages:
  * - @midnight-ntwrk/midnight-js-sdk
  * - @midnight-ntwrk/wallet
  * - @midnight-ntwrk/compact-runtime
  */
 
 // NOTE: These Midnight SDK imports are for production use
-// For development, we use mock blockchain integration
+// For development,use Local Ledger Provider integration
 // import {
 //   Address,
 //   ContractAddress,

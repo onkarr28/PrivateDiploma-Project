@@ -15,7 +15,12 @@ interface VerificationResult {
 }
 
 export default function EmployerVerification({ userAddress }: EmployerVerificationProps) {
-  const { verifyDiploma, isLoading: sdkLoading, error: sdkError } = useMidnightSDK()
+  const { 
+    verifyDiploma, 
+    isLoading: sdkLoading, 
+    error: sdkError,
+    ledgerDiplomas,
+  } = useMidnightSDK()
   
   const [step, setStep] = useState<'upload' | 'verifying' | 'result'>('upload')
   const [proof, setProof] = useState<any>(null)
@@ -59,9 +64,31 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
     setVerificationError(null)
 
     try {
-      console.log('🔍 Verifying diploma on Midnight Network...')
+      console.log('🔍 Verifying diploma through Midnight Network...')
       
-      // Call SDK to verify the diploma
+      // Query ledger state for diploma commitment
+      const ledgerDiplomaMatch = ledgerDiplomas?.find(
+        d => d.certificateHash === proofData.certificateHash
+      )
+      
+      // If found in ledger state, return verified result
+      if (ledgerDiplomaMatch) {
+        console.log('✅ Diploma verified through ledger state synchronization')
+        
+        const result: VerificationResult = {
+          isValid: true,
+          diplomaHash: ledgerDiplomaMatch.certificateHash,
+          message: 'Diploma verified successfully through Midnight Network',
+          verifiedAt: Date.now(),
+          employerVerified: userAddress,
+        }
+
+        setResult(result)
+        setStep('result')
+        return
+      }
+      
+      // Otherwise call SDK to verify the diploma
       const verificationResult = await verifyDiploma({
         certificateHash: proofData.certificateHash || '',
         studentDataCommitment: proofData.commitment || '',

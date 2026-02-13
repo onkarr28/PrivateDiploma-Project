@@ -19,16 +19,36 @@ interface StudentCredential {
 }
 
 export default function StudentDashboard({ userAddress }: StudentDashboardProps) {
-  const { generateZKProof, isLoading: sdkLoading, error: sdkError } = useMidnightSDK()
+  const { 
+    generateZKProof, 
+    isLoading: sdkLoading, 
+    error: sdkError,
+    ledgerDiplomas,
+    getLedgerDiplomasByIssuer,
+  } = useMidnightSDK()
   
   const [credentials, setCredentials] = useState<StudentCredential[]>([])
 
-  // Load credentials from blockchain (mock data for demo)
+  // Load credentials from ledger state commitment
   useEffect(() => {
     console.log('📚 Student Dashboard loaded for:', userAddress)
-    // In production, this would query blockchain for student's diplomas
-    // For now, showing empty state until diplomas are issued
-  }, [userAddress])
+    
+    // Load diplomas from ledger for this student
+    if (ledgerDiplomas && ledgerDiplomas.length > 0) {
+      const studentDiplomas = ledgerDiplomas.map((diploma: any, idx: number) => ({
+        id: `cred_${idx}`,
+        degree: diploma.degreeType || 'Bachelor of Science',
+        issuer: diploma.universityAddress || 'University of Midnight',
+        certificateHash: diploma.certificateHash || `cert_${Date.now()}_${idx}`,
+        issuanceDate: diploma.issuanceDate || new Date().toISOString().split('T')[0],
+        expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)).toISOString().split('T')[0],
+        status: diploma.status || 'valid' as const,
+      }));
+      
+      setCredentials(studentDiplomas);
+      console.log('✓ Loaded credentials from ledger:', studentDiplomas);
+    }
+  }, [userAddress, ledgerDiplomas])
 
   const [selectedCredential, setSelectedCredential] = useState<StudentCredential | null>(
     null

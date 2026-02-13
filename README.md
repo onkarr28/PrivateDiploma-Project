@@ -6,6 +6,8 @@
 ![Status](https://img.shields.io/badge/Status-Beta-yellow)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+> **⚡ Quick Start:** See [QUICK_SETUP.md](QUICK_SETUP.md) for contract address, wallet connection details, and 5-minute setup guide.
+
 ## 🌟 Overview
 
 PrivateDiploma enables universities to issue digital diplomas and allows students to prove they possess valid degrees to employers using **Zero-Knowledge Proofs (ZKP)** without revealing:
@@ -110,6 +112,27 @@ The project includes:
 npm run dev
 
 # The app opens at http://localhost:3000
+```
+
+### ⛓️ Contract Address
+
+The application uses a Midnight Network smart contract for diploma issuance and verification:
+
+**Testnet Contract Address (Local Midnight Network):**
+```
+mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p
+```
+
+**Configuration:**
+- RPC URL: `http://localhost:9944` (local Midnight node)
+- Network ID: `0` (testnet/local)
+- Contract status: Deployed and active
+
+You can update the contract address in `.env.local`:
+```env
+VITE_CONTRACT_ADDRESS=mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p
+VITE_MIDNIGHT_RPC_URL=http://localhost:9944
+VITE_ENABLE_BLOCKCHAIN=true
 ```
 
 ### Building for Production

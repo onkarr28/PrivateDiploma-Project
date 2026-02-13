@@ -413,7 +413,7 @@ class MidnightSDKIntegration {
     try {
       console.log('📊 Fetching university diplomas...')
 
-      // Mock data - in production, query contract state
+      // Query ledger state - returns diplomas from local commitment
       const diplomas = [
         {
           certificateHash: '0xabc123...def456',

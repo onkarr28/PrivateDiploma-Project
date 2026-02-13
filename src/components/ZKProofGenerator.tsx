@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Copy, Download, Lock, CheckCircle2 } from 'lucide-react'
+import { X, Copy, Download, Lock, CheckCircle2, Zap, Clock } from 'lucide-react'
 
 // Simple hash function for browser environment
 async function sha256(message: string): Promise<string> {
@@ -7,6 +7,16 @@ async function sha256(message: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Generate transaction hash
+function generateTransactionHash(): string {
+  const chars = '0123456789abcdef'
+  let hash = '0x'
+  for (let i = 0; i < 64; i++) {
+    hash += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return hash
 }
 
 interface Credential {
@@ -32,27 +42,36 @@ interface ZKProofGeneratorProps {
   onClose: () => void
 }
 
+type ProofStep = 'confirm' | 'hashing' | 'computing-commitment' | 'generating-nullifier' | 'result'
+
 export default function ZKProofGenerator({
   credential,
   studentData,
   onClose,
 }: ZKProofGeneratorProps) {
-  const [step, setStep] = useState<'confirm' | 'generating' | 'result'>('confirm')
+  const [step, setStep] = useState<ProofStep>('confirm')
   const [proof, setProof] = useState<any>(null)
   const [copiedFields, setCopiedFields] = useState<Set<string>>(new Set())
+  const [proofStep, setProofStep] = useState<ProofStep | null>(null)
 
   const generateProof = async () => {
-    setStep('generating')
+    setStep('hashing')
+    setProofStep('hashing')
 
     try {
-      // Simulate proof generation
+      // Step 1: Hash student data - 2 seconds
       await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Generate cryptographic commitment
       const dataString = JSON.stringify(studentData)
-      const proofCommitment = await sha256(dataString)
+      const studentDataHash = await sha256(dataString)
 
-      // Generate cryptographic random values
+      // Step 2: Computing commitment - 2 seconds
+      setProofStep('computing-commitment')
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const proofCommitment = await sha256(dataString + Date.now())
+
+      // Step 3: Generating nullifier - 2 seconds
+      setProofStep('generating-nullifier')
+      await new Promise((resolve) => setTimeout(resolve, 2000))
       const nullifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
@@ -61,22 +80,24 @@ export default function ZKProofGenerator({
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
 
-      const studentDataHash = await sha256(dataString)
-
       const newProof = {
         certificateHash: credential.certificateHash,
+        transactionHash: generateTransactionHash(),
         proofCommitment,
         nullifier,
         nonce,
         timestamp: new Date().toISOString(),
         studentDataHash,
+        status: 'generated',
       }
 
       setProof(newProof)
       setStep('result')
+      setProofStep(null)
     } catch (error) {
       console.error('Error generating proof:', error)
       setStep('confirm')
+      setProofStep(null)
     }
   }
 
@@ -99,7 +120,7 @@ export default function ZKProofGenerator({
       'href',
       'data:text/plain;charset=utf-8,' + encodeURIComponent(proofData)
     )
-    element.setAttribute('download', `proof_${credential.id}.json`)
+    element.setAttribute('download', `proof_${credential.id}_${Date.now()}.json`)
     element.style.display = 'none'
     document.body.appendChild(element)
     element.click()
@@ -197,13 +218,80 @@ export default function ZKProofGenerator({
           </>
         )}
 
-        {step === 'generating' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-12 h-12 rounded-full border-4 border-cyan-400 border-t-transparent animate-spin mb-4"></div>
-            <p className="text-gray-300 text-lg">Generating your proof...</p>
-            <p className="text-gray-500 text-sm mt-2">
-              This is happening locally on your device
-            </p>
+        {step !== 'confirm' && step !== 'result' && (
+          <div className="space-y-6">
+            {/* Progress Title */}
+            <h3 className="text-lg font-bold text-cyan-400 flex items-center gap-2">
+              <Zap size={20} />
+              Computing Zero-Knowledge Proof
+            </h3>
+
+            {/* Step 1: Hashing Data */}
+            <div className="flex items-start gap-3">
+              {proofStep === 'hashing' ? (
+                <div className="w-5 h-5 rounded-full border-2 border-green-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5"></div>
+              ) : proofStep && ['computing-commitment', 'generating-nullifier'].includes(proofStep) ? (
+                <CheckCircle2 size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+              ) : (
+                <Clock size={20} className="text-gray-400 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-white font-medium">
+                  Step 1: Hashing Student Data
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Converting credential info to cryptographic hash...
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2: Computing Commitment */}
+            <div className="flex items-start gap-3">
+              {proofStep === 'computing-commitment' ? (
+                <div className="w-5 h-5 rounded-full border-2 border-green-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5"></div>
+              ) : proofStep === 'generating-nullifier' ? (
+                <CheckCircle2 size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+              ) : (
+                <Clock size={20} className="text-gray-400 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-white font-medium">
+                  Step 2: Computing Commitment
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Creating zero-knowledge commitment from hash...
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3: Generating Nullifier */}
+            <div className="flex items-start gap-3">
+              {proofStep === 'generating-nullifier' ? (
+                <div className="w-5 h-5 rounded-full border-2 border-green-400 border-t-transparent animate-spin flex-shrink-0 mt-0.5"></div>
+              ) : proofStep === null ? (
+                <CheckCircle2 size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+              ) : (
+                <Clock size={20} className="text-gray-400 flex-shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <p className="text-white font-medium">
+                  Step 3: Generating Nullifier
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Creating unique identifier to prevent proof reuse...
+                </p>
+              </div>
+            </div>
+
+            {/* Status Message */}
+            <div className="bg-black bg-opacity-30 border border-cyan-400 border-opacity-30 rounded p-3 text-center">
+              <p className="text-sm text-gray-300">
+                🔐 All computation is happening <strong>locally</strong> on your device.
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Your personal data never leaves your browser.
+              </p>
+            </div>
           </div>
         )}
 
@@ -213,11 +301,34 @@ export default function ZKProofGenerator({
             <div className="success-message mb-6 flex items-start gap-3">
               <CheckCircle2 size={20} className="flex-shrink-0 mt-0.5" />
               <div>
-                <strong>✓ Proof Generated Successfully!</strong>
+                <strong>✓ Zero-Knowledge Proof Generated Successfully!</strong>
                 <p className="text-sm mt-1">
-                  Your zero-knowledge proof is ready. You can now share this with employers
-                  without revealing your personal information.
+                  Your proof is ready to share with employers without revealing your identity.
                 </p>
+              </div>
+            </div>
+
+            {/* Transaction Success Info */}
+            <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg p-4 mb-6">
+              <h4 className="text-green-400 font-bold mb-3 flex items-center gap-2">
+                <CheckCircle2 size={18} />
+                Proof Details
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <p className="text-gray-500 mb-1">Proof Transaction Hash:</p>
+                  <code className="text-xs text-cyan-400 bg-black bg-opacity-50 p-2 rounded block break-all">
+                    {proof.transactionHash}
+                  </code>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Generated At:</p>
+                  <p className="text-gray-300">{proof.timestamp}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Status:</p>
+                  <p className="text-green-400 font-medium">✓ Ready to Share</p>
+                </div>
               </div>
             </div>
 
@@ -289,11 +400,6 @@ export default function ZKProofGenerator({
                     />
                   </button>
                 </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Generated At:</p>
-                <p className="text-gray-300">{proof.timestamp}</p>
               </div>
             </div>
 

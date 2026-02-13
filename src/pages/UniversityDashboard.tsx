@@ -26,6 +26,9 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
     issueDiploma: sdkIssueDiploma, 
     submitDiplomaTransaction,
     monitorTransaction,
+    addLedgerDiploma,
+    ledgerDiplomas,
+    getLedgerDiplomasByIssuer,
     isLoading: sdkLoading, 
     error: sdkError, 
     contractAddress 
@@ -43,10 +46,38 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
     pendingVerification: 0,
   })
 
-  // Diplomas loaded from blockchain (mock for now)
+  // Load diplomas from ledger state
   useEffect(() => {
     console.log('📚 University Dashboard loaded for:', userAddress)
-  }, [userAddress])
+    
+    // Load credentials issued by this university from ledger state
+    if (ledgerDiplomas && ledgerDiplomas.length > 0) {
+      const universityDiplomas = ledgerDiplomas
+        .filter((d: any) => d.universityAddress === userAddress)
+        .map((d: any, idx: number) => ({
+          id: `dip_${idx}`,
+          studentName: d.studentName || '[Privacy Protected]',
+          studentId: d.studentId || 'Unknown',
+          certificateHash: d.certificateHash || '',
+          degreeType: d.degreeType || 'Bachelor of Science',
+          issuanceDate: d.issuanceDate ? d.issuanceDate.split('T')[0] : new Date().toISOString().split('T')[0],
+          status: d.status || 'valid' as const,
+          studentDataCommitment: d.certificateHash || '',
+        }))
+      
+      setDiplomas(universityDiplomas)
+      
+      // Update stats
+      setStats({
+        totalIssued: universityDiplomas.length,
+        activeCredentials: universityDiplomas.filter(d => d.status === 'valid').length,
+        revokedCredentials: universityDiplomas.filter(d => d.status === 'revoked').length,
+        pendingVerification: 0,
+      })
+      
+      console.log('✓ Loaded', universityDiplomas.length, 'credentials from ledger state')
+    }
+  }, [userAddress, ledgerDiplomas])
 
   /**
    * Handle diploma issuance with ON-CHAIN TRANSACTION
@@ -72,7 +103,16 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
       setDiplomas([...diplomas, newDiploma])
       setShowForm(false)
 
-      // Step 1: Create witness data (kept private locally)
+      // Commit diploma to local ledger state
+      const ledgerDiplomaData = {
+        studentId: formData.studentId,
+        studentName: formData.studentName || '[Privacy Protected]',
+        degreeType: formData.degreeType,
+        universityAddress: userAddress,
+      }
+      addLedgerDiploma(ledgerDiplomaData)
+
+      // Step 1: Create witness data (kept private locally for ZK circuit)
       const witness = {
         studentId: formData.studentId,
         studentName: formData.studentName,
@@ -108,6 +148,17 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
             status: 'valid',
             studentDataCommitment: status.certificateHash || '',
           }
+
+          // Commit diploma to ledger state
+          addLedgerDiploma({
+            studentId: formData.studentId,
+            studentName: '[Privacy Protected]',
+            degreeType: formData.degreeType,
+            universityAddress: userAddress,
+            certificateHash: updatedDiploma.certificateHash,
+            issuanceDate: updatedDiploma.issuanceDate,
+            status: 'valid',
+          })
 
           setDiplomas(diplomas =>
             diplomas.map(d => (d.id === newDiplomaId ? updatedDiploma : d))
