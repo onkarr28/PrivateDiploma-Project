@@ -389,6 +389,37 @@ export class MidnightNetworkService {
     return { transactionHash: transactionId };
   }
 
+  addDiplomaFromClient(payload: {
+    universityAddress: string;
+    degreeType: string;
+    certificateHash: string;
+  }): void {
+    this.blockHeight++;
+
+    const commitment = CryptoUtility.generateSHA256(
+      `${payload.certificateHash}_${payload.universityAddress}`
+    );
+
+    const nullifier = CryptoUtility.generateSHA256(
+      `null_${payload.certificateHash}_${payload.universityAddress}`
+    );
+
+    const diploma: LedgerDiploma = {
+      certificateHash: payload.certificateHash,
+      studentCommitment: commitment,
+      nullifier,
+      universityAddress: payload.universityAddress,
+      degreeType: payload.degreeType,
+      issuanceDate: new Date().toISOString(),
+      transactionHash: `client_${payload.certificateHash.slice(0, 16)}`,
+      blockHeight: this.blockHeight,
+      status: 'confirmed',
+      timestamp: Date.now(),
+    };
+
+    this.ledgerState.addDiploma(diploma);
+  }
+
   /**
    * Retrieves all diplomas issued by a university
    * Queries ledger for university-specific credentials

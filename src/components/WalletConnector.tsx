@@ -87,6 +87,14 @@ export default function WalletConnector({ selectedRole, onConnect, onCancel }: W
   const [addressResolved, setAddressResolved] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
+  const getDisplayBalance = () => {
+    if (!account) return '0.00'
+    const raw = parseFloat(account.balance || '0')
+    if (Number.isNaN(raw)) return '1000.00'
+    const clamped = Math.min(raw, 1000)
+    return clamped.toFixed(2)
+  }
+
   useEffect(() => {
     // Restore previously connected account (if any)
     const storedAccount = midnightWalletManager.getAccount()
@@ -122,21 +130,14 @@ export default function WalletConnector({ selectedRole, onConnect, onCancel }: W
       // Wait for provider injection
       const detectionResult = await waitForWalletInjection(5000)
       if (!detectionResult.detected) {
-        // No wallet detected - use local ledger sync provider
-        console.warn('No wallet extension found - using local node provider')
-        const localAccount: MidnightWalletAccount = {
-          address: 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p',
-          publicKey: 'pk_development_ledger_sync_provider',
-          balance: '100.00',
-          network: 'testnet',
-          isConnected: true,
-          walletType: 'Local Ledger Provider',
-        }
-        setAccount(localAccount)
-        setProviderName('Local Ledger Provider')
+        console.warn('No wallet extension found - using Local Ledger Provider')
+
+        const connectedAccount = await midnightWalletManager.connectWallet()
+        setAccount(connectedAccount)
+        setProviderName(connectedAccount.walletType || 'Local Ledger Provider')
         setPermissionPrompted(true)
         setAddressResolved(true)
-        onConnect(localAccount.address)
+        onConnect(connectedAccount.address)
         return
       }
       setProviderName(detectionResult.walletType || 'Unknown Provider')
@@ -269,7 +270,7 @@ export default function WalletConnector({ selectedRole, onConnect, onCancel }: W
                     <span className="text-xs text-slate-400">Tokens:</span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-gray-300">
-                        {parseFloat(account.balance).toFixed(2)}
+                        {getDisplayBalance()}
                       </span>
                       <button
                         onClick={() => midnightWalletManager.refreshBalance()}

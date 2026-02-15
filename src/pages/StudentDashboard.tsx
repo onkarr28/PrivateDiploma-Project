@@ -86,13 +86,21 @@ export default function StudentDashboard({ userAddress }: StudentDashboardProps)
 
       console.log('🔐 Generating ZK Proof for credential:', selectedCredential.id)
       
-      const proof = await generateZKProof(studentData)
-      
+      const proof = await generateZKProof({
+        name: studentData.name,
+        id: studentData.studentId,
+        grade: 'A+',
+      })
+
+      // Normalized proof payload that employers can verify directly.
+      // Includes the on-ledger certificate hash plus a commitment and proof string.
       setGeneratedProof({
         credentialId: selectedCredential.id,
         degree: selectedCredential.degree,
         issuer: selectedCredential.issuer,
-        proof: proof.proof,
+        certificateHash: selectedCredential.certificateHash,
+        studentDataCommitment: Array.isArray(proof.publicInputs) ? proof.publicInputs[0] : '',
+        proofData: proof.proof,
         timestamp: new Date().toISOString(),
         status: 'ready_to_share',
       })
@@ -270,7 +278,9 @@ export default function StudentDashboard({ userAddress }: StudentDashboardProps)
                       </div>
                       <div>
                         <p className="text-gray-500">Issuer:</p>
-                        <p className="text-white">{selectedCredential.issuer}</p>
+                        <p className="text-white break-all text-xs md:text-sm font-mono">
+                          {selectedCredential.issuer}
+                        </p>
                       </div>
                       <div>
                         <p className="text-gray-500">Issued:</p>

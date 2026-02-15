@@ -31,7 +31,7 @@ function AppContent() {
       console.log('🔗 Wallet connected, initializing SDK...')
       initializeSDK({
         rpcUrl: 'http://localhost:9944',
-        contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS || 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p',
+        contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS || 'contract_81aac1479224e8896ff26cf220354553e382701d',
         networkId: 'midnight-local'
       }, userInfo.address).catch(err => {
         console.warn('SDK initialization failed (will use Local Ledger Provider):', err)

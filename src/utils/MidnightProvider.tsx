@@ -100,19 +100,21 @@ export function MidnightProvider({ children, config }: MidnightProviderProps) {
    * Persists through ledger synchronization
    */
   const addLedgerDiploma = useCallback((diploma: any) => {
-    const certificateHash = `cert_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    const newDiploma = {
-      ...diploma,
+    const certificateHash =
+      diploma.certificateHash || `cert_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+
+    midnightNetworkService.addDiplomaFromClient({
+      universityAddress: diploma.universityAddress,
+      degreeType: diploma.degreeType,
       certificateHash,
-      timestamp: new Date().toISOString(),
-      status: 'confirmed'
-    };
-    
-    midnightNetworkService.getAllDiplomas().push(newDiploma);
-    setLedgerDiplomas([...midnightNetworkService.getAllDiplomas()]);
-    
-    console.log('✓ Diploma committed to ledger:', newDiploma);
-    return newDiploma;
+    })
+
+    const updated = midnightNetworkService.getAllDiplomas()
+    setLedgerDiplomas(updated)
+
+    const committed = { ...diploma, certificateHash }
+    console.log('✓ Diploma committed to ledger:', committed)
+    return committed
   }, []);
 
   /**
@@ -177,7 +179,7 @@ export function MidnightProvider({ children, config }: MidnightProviderProps) {
         // Initialize transaction manager
         initializeTransactionManager({
           rpcUrl: finalConfig.rpcUrl,
-          contractAddress: finalConfig.contractAddress || import.meta.env.VITE_CONTRACT_ADDRESS || 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p',
+          contractAddress: finalConfig.contractAddress || import.meta.env.VITE_CONTRACT_ADDRESS || 'contract_81aac1479224e8896ff26cf220354553e382701d',
           networkId: finalConfig.networkId,
         })
         
@@ -190,14 +192,14 @@ export function MidnightProvider({ children, config }: MidnightProviderProps) {
         // Initialize with Local Ledger Provider if real SDK unavailable
         const ledgerSDK = new MidnightSDKIntegration(providedConfig || config || {
           rpcUrl: 'http://localhost:9944',
-          contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS || 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p',
+          contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS || 'contract_81aac1479224e8896ff26cf220354553e382701d',
           networkId: 'midnight-local'
         })
         ledgerSDK.setConnectedAddress(connectedAddress)
         
         setSDK(ledgerSDK)
         setConnected(true)
-        setContractAddress(import.meta.env.VITE_CONTRACT_ADDRESS || 'mn1pzq7xa7j8q2k9r5v3w8m1n7p0q2k5j8r3v6w9m2n5p8q1k4j7r0v3w6m9n2p')
+        setContractAddress(import.meta.env.VITE_CONTRACT_ADDRESS || 'contract_81aac1479224e8896ff26cf220354553e382701d')
         
         // Clear error so UI doesn't show error banner
         setError(null)
@@ -416,7 +418,7 @@ export function MidnightProvider({ children, config }: MidnightProviderProps) {
     (txHash: string, callback: (status: TransactionResult) => void) => {
       try {
         const txManager = getTransactionManager()
-        return txManager.onTransactionUpdate(txHash, callback)
+        return txManager.monitorTransaction(txHash, callback)
       } catch (err) {
         console.error('Failed to monitor transaction:', err)
         return () => {} // Return empty unsubscribe function

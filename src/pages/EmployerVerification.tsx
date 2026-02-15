@@ -12,6 +12,7 @@ interface VerificationResult {
   message: string
   verifiedAt: number
   employerVerified: string
+  issuerAddress?: string
 }
 
 export default function EmployerVerification({ userAddress }: EmployerVerificationProps) {
@@ -66,9 +67,19 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
     try {
       console.log('🔍 Verifying diploma through Midnight Network...')
       
+      // Normalize certificate hash from whatever proof shape we receive
+      const normalizedCertificateHash =
+        proofData.certificateHash ||
+        proofData.certificate_hash ||
+        proofData.transactionHash ||
+        proofData.proofCommitment ||
+        proofData.proofData ||
+        proofData.proof ||
+        ''
+      
       // Query ledger state for diploma commitment
       const ledgerDiplomaMatch = ledgerDiplomas?.find(
-        d => d.certificateHash === proofData.certificateHash
+        d => d.certificateHash === normalizedCertificateHash
       )
       
       // If found in ledger state, return verified result
@@ -81,6 +92,7 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
           message: 'Diploma verified successfully through Midnight Network',
           verifiedAt: Date.now(),
           employerVerified: userAddress,
+          issuerAddress: ledgerDiplomaMatch.universityAddress,
         }
 
         setResult(result)
@@ -88,17 +100,17 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
         return
       }
       
-      // Otherwise call SDK to verify the diploma
+      // Otherwise call SDK to verify the diploma using the normalized proof payload
       const verificationResult = await verifyDiploma({
-        certificateHash: proofData.certificateHash || '',
-        studentDataCommitment: proofData.commitment || '',
-        proofData: proofData.proof || '',
+        certificateHash: normalizedCertificateHash,
+        studentDataCommitment: proofData.studentDataCommitment || '',
+        proofData: proofData.proofData || proofData.proof || '',
       })
 
       // Format the result
       const result: VerificationResult = {
         isValid: verificationResult.isValid,
-        diplomaHash: verificationResult.isValid ? (proofData.certificateHash || '') : '',
+        diplomaHash: verificationResult.isValid ? normalizedCertificateHash : '',
         message: verificationResult.message,
         verifiedAt: Date.now(),
         employerVerified: userAddress,
@@ -318,16 +330,26 @@ export default function EmployerVerification({ userAddress }: EmployerVerificati
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white border-opacity-20">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white border-opacity-20">
                     <div>
-                      <p className="text-gray-400 text-sm mb-1">Issued By:</p>
-                      <p className="text-white font-medium">{result.employerVerified}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm mb-1">Verified At:</p>
-                      <p className="text-white font-medium">
-                        {new Date(result.verifiedAt).toLocaleString()}
+                      <p className="text-gray-400 text-sm mb-1">Issued By (University Address):</p>
+                      <p className="text-white font-mono text-xs break-all">
+                        {result.issuerAddress || 'Resolved from proof'}
                       </p>
+                    </div>
+                    <div className="space-y-1">
+                      <div>
+                        <p className="text-gray-400 text-sm mb-1">Verified By (Employer Address):</p>
+                        <p className="text-white font-mono text-xs break-all">
+                          {result.employerVerified}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-sm mb-1">Verified At:</p>
+                        <p className="text-white font-medium text-sm">
+                          {new Date(result.verifiedAt).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

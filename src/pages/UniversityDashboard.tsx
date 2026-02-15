@@ -103,15 +103,6 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
       setDiplomas([...diplomas, newDiploma])
       setShowForm(false)
 
-      // Commit diploma to local ledger state
-      const ledgerDiplomaData = {
-        studentId: formData.studentId,
-        studentName: formData.studentName || '[Privacy Protected]',
-        degreeType: formData.degreeType,
-        universityAddress: userAddress,
-      }
-      addLedgerDiploma(ledgerDiplomaData)
-
       // Step 1: Create witness data (kept private locally for ZK circuit)
       const witness = {
         studentId: formData.studentId,
@@ -132,6 +123,17 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
       console.log('✓ Transaction submitted:', txResult.txHash)
       console.log('⏳ Status:', txResult.status)
 
+      // Persist diploma in ledger immediately using commitment
+      addLedgerDiploma({
+        studentId: formData.studentId,
+        studentName: '[Privacy Protected]',
+        degreeType: formData.degreeType,
+        universityAddress: userAddress,
+        certificateHash: txResult.certificateHash,
+        issuanceDate: new Date().toISOString(),
+        status: 'valid',
+      })
+
       // Step 3: Monitor transaction status
       const unsubscribe = monitorTransaction(txResult.txHash, (status: TransactionResult) => {
         console.log('📡 Transaction update:', status)
@@ -148,17 +150,6 @@ export default function UniversityDashboard({ userAddress }: UniversityDashboard
             status: 'valid',
             studentDataCommitment: status.certificateHash || '',
           }
-
-          // Commit diploma to ledger state
-          addLedgerDiploma({
-            studentId: formData.studentId,
-            studentName: '[Privacy Protected]',
-            degreeType: formData.degreeType,
-            universityAddress: userAddress,
-            certificateHash: updatedDiploma.certificateHash,
-            issuanceDate: updatedDiploma.issuanceDate,
-            status: 'valid',
-          })
 
           setDiplomas(diplomas =>
             diplomas.map(d => (d.id === newDiplomaId ? updatedDiploma : d))
