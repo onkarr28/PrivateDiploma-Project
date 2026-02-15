@@ -24,6 +24,14 @@ Key properties:
 
 ---
 
+## Demo Video
+
+For a complete end-to-end walkthrough of the PrivateDiploma experience (University → Student → Employer), watch the demo video:
+
+- Full project demo: https://drive.google.com/file/d/1-bNr3W2WkwqQMbzULrA5XJxLu19Nb4qB/view?usp=sharing
+
+---
+
 ## Deployment Details (Contract)
 
 - **Contract name:** `PrivateDiploma`

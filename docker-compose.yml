@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - VITE_NETWORK_ID=testnet
       - VITE_RPC_URL=https://rpc.testnet.midnight.network
-      - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+      - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-contract_81aac1479224e8896ff26cf220354553e382701d}
       - VITE_ENABLE_BLOCKCHAIN=${ENABLE_BLOCKCHAIN:-false}
     volumes:
       # Mount source for development (optional - comment out for production)
@@ -41,7 +41,7 @@ services:
   #     - NODE_ENV=development
   #     - VITE_NETWORK_ID=testnet
   #     - VITE_RPC_URL=https://rpc.testnet.midnight.network
-  #     - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+  #     - VITE_CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-contract_81aac1479224e8896ff26cf220354553e382701d}
   #     - VITE_ENABLE_BLOCKCHAIN=${ENABLE_BLOCKCHAIN:-false}
   #   volumes:
   #     - .:/app
