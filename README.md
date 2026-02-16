@@ -8,7 +8,7 @@ Privacy-preserving diploma issuance and verification on the Midnight Network usi
 
 ---
 
-## Overview
+## Project Description
 
 PrivateDiploma allows universities to issue digital diplomas and lets students prove to employers that a degree is valid **without revealing any personal data**.
 
@@ -21,6 +21,12 @@ Key properties:
 - Only **hashes and commitments** are stored on-chain
 - Student name, grades, transcript and ID remain **fully off-chain**
 - Verification is a simple **true/false** answer: “Is this diploma valid?”
+
+---
+
+## Project Vision
+
+The vision of PrivateDiploma is to become a privacy-first credential layer for universities, students, and employers on the Midnight Network. Instead of exposing full transcripts or personal details, the system proves only what is necessary: **that a valid diploma exists** and was issued by a legitimate university. Long term, the same pattern can be extended to transcripts, professional certificates, and compliance records while keeping identities and grades fully private.
 
 ---
 
@@ -136,7 +142,8 @@ Verification guarantees:
 midnight project/
 ├── contracts/
 │   └── PrivateDiploma.compact         # Compact smart contract
-├── src/
+├── frontend/
+│   └── src/
 │   ├── pages/
 │   │   ├── Landing.tsx                # Role selection & overview
 │   │   ├── UniversityDashboard.tsx    # Issuance flows
@@ -156,14 +163,16 @@ midnight project/
 │   ├── App.tsx                        # Root React app
 │   └── main.tsx                       # Vite entrypoint
 ├── contracts/PrivateDiploma.compact   # Contract source
-├── index.html
+├── Dockerfile                         # Production image
+├── docker-compose.yml                 # Containerized deployment
+├── nginx.conf                         # Nginx config for static hosting
 ├── package.json
 └── vite.config.ts
 ```
 
 ---
 
-## Getting Started
+## Installation & Setup Guide
 
 ### Prerequisites
 
@@ -171,7 +180,7 @@ midnight project/
 - npm 9+
 - Modern Chromium-based browser
 
-### Install & Run
+### Install & Run (Dev)
 
 ```bash
 git clone https://github.com/onkarr28/Midnight-RiseIn.git
@@ -189,6 +198,19 @@ The app will start on the first free HTTPS port (typically `https://localhost:30
 ```bash
 npm run build    # Type-check + production build
 npm run preview  # Preview production bundle
+```
+
+### Run with Docker (Prod-like)
+
+```bash
+cd "midnight project"
+
+# Optional: override from environment
+set CONTRACT_ADDRESS=contract_81aac1479224e8896ff26cf220354553e382701d
+set ENABLE_BLOCKCHAIN=false
+
+docker compose up -d --build
+# App available at: http://localhost:3003
 ```
 
 ---
@@ -240,6 +262,17 @@ From the UI’s perspective, both paths expose:
 
 ---
 
+## UI Screenshots & Walkthrough
+
+- **Landing Page** – role selection for University, Student, Employer with Midnight-branded hero section.
+- **University Dashboard** – issuance form, issued diploma list, transaction progress and hashes.
+- **Student Dashboard** – “My Credentials” list, selected credential details, and “Generate ZK Proof” flow.
+- **Employer Verification** – proof upload/paste area, verification result card, and certificate hash details.
+
+For a full animated walkthrough of all screens, see the [Demo Video](#demo-video) section.
+
+---
+
 ## Limitations & Caveats
 
 - The DApp currently runs against a **local/testnet-style environment**; full mainnet deployment would require:
@@ -249,6 +282,16 @@ From the UI’s perspective, both paths expose:
 - Local Ledger Provider is a high‑fidelity local ledger simulation, not a custodial wallet.
 
 These constraints are identical in spirit to the Echo reference project: front‑end and contract design are production‑grade; on‑chain connectivity can be swapped in when full public SDK and infrastructure are available.
+
+---
+
+## Future Scope
+
+- **Full Midnight SDK Integration** – replace the Local Ledger Provider with live Midnight nodes and deployed contracts on public testnet/mainnet.
+- **Extended Credential Types** – support transcripts, micro-credentials, and professional certificates using the same ZK pattern.
+- **Revocation & Governance UI** – richer views for revocation history, multi-signer university governance, and audit logs.
+- **Multi-chain Bridges** – explore bridging verified Midnight diplomas into other ecosystems (e.g., Cardano) as verifiable credentials.
+- **Employer APIs** – add REST/GraphQL endpoints so HR systems can verify proofs automatically without using the UI.
 
 ---
 
